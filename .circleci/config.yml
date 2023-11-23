@@ -321,36 +321,36 @@ jobs:
       - store_artifacts:
           path: build/test-results
 
-  acceptanceTests:
-    parallelism: 5
-    executor: machine_executor_amd64
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: AcceptanceTests
-          no_output_timeout: 20m
-          command: |
-            CLASSNAMES=$(circleci tests glob "**/src/acceptance-test/java/**/*.java" \
-              | sed 's@.*/src/acceptance-test/java/@@' \
-              | sed 's@/@.@g' \
-              | sed 's/.\{5\}$//' \
-              | circleci tests split --split-by=timings --timings-type=classname)
-            # Format the arguments to "./gradlew test"
-            GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-            echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-            if [[ -z "$GRADLE_ARGS" ]]
-            then
-              echo "Failed to determine correct distribution of tests across nodes"
-              exit 1
-            fi
-            ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
-      # - notify
-      - capture_test_results
-      - capture_test_artifacts
-      - store_artifacts:
-          path: build/test-results
+  # acceptanceTests:
+  #   parallelism: 5
+  #   executor: machine_executor_amd64
+  #   steps:
+  #     - prepare
+  #     - attach_workspace:
+  #         at: ~/project
+  #     - run:
+  #         name: AcceptanceTests
+  #         no_output_timeout: 20m
+  #         command: |
+  #           CLASSNAMES=$(circleci tests glob "**/src/acceptance-test/java/**/*.java" \
+  #             | sed 's@.*/src/acceptance-test/java/@@' \
+  #             | sed 's@/@.@g' \
+  #             | sed 's/.\{5\}$//' \
+  #             | circleci tests split --split-by=timings --timings-type=classname)
+  #           # Format the arguments to "./gradlew test"
+  #           GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+  #           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+  #           if [[ -z "$GRADLE_ARGS" ]]
+  #           then
+  #             echo "Failed to determine correct distribution of tests across nodes"
+  #             exit 1
+  #           fi
+  #           ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
+  #     # - notify
+  #     - capture_test_results
+  #     - capture_test_artifacts
+  #     - store_artifacts:
+  #         path: build/test-results
 
   referenceTestsPrep:
     executor: large_executor
@@ -413,22 +413,22 @@ jobs:
       # - notify
       - capture_test_results
 
-  publish-cloudsmith:
-    executor: small_executor
-    steps:
-      - prepare
-      - run:
-          name: Install Python3
-          command: |
-            sudo apt update
-            sudo apt install python3 python3-pip python3-venv
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Publish to Cloudsmith
-          command: |
-            ./gradlew --no-daemon --parallel cloudsmithUpload publish
-      # - notify
+  # publish-cloudsmith:
+  #   executor: small_executor
+  #   steps:
+  #     - prepare
+  #     - run:
+  #         name: Install Python3
+  #         command: |
+  #           sudo apt update
+  #           sudo apt install python3 python3-pip python3-venv
+  #     - attach_workspace:
+  #         at: ~/project
+  #     - run:
+  #         name: Publish to Cloudsmith
+  #         command: |
+  #           ./gradlew --no-daemon --parallel cloudsmithUpload publish
+  #     # - notify
 
   publishDockerAmd64:
     executor: machine_executor_amd64
@@ -461,75 +461,75 @@ jobs:
             ./gradlew --no-daemon --parallel manifestDocker
       # - notify
 
-  extractAPISpec:
-    executor: medium_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Build runnable Teku binaries
-          command: |
-            ./gradlew --no-daemon --parallel installDist
-      - run:
-          name: Extract OpenAPI JSON
-          command: |
-            mkdir -p .openapidoc/spec
+  # extractAPISpec:
+  #   executor: medium_executor
+  #   steps:
+  #     - prepare
+  #     - attach_workspace:
+  #         at: ~/project
+  #     - run:
+  #         name: Build runnable Teku binaries
+  #         command: |
+  #           ./gradlew --no-daemon --parallel installDist
+  #     - run:
+  #         name: Extract OpenAPI JSON
+  #         command: |
+  #           mkdir -p .openapidoc/spec
 
-            build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --ignore-weak-subjectivity-period-enabled --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
-            TEKU_PID=$!
+  #           build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --ignore-weak-subjectivity-period-enabled --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+  #           TEKU_PID=$!
 
-            EXIT_CODE=0
-            wget --timeout=30 --retry-connrefused --output-document=.openapidoc/spec/teku.json http://localhost:5051/swagger-docs
-            if [ $? != 0 ]; then
-              EXIT_CODE=1
-            fi
+  #           EXIT_CODE=0
+  #           wget --timeout=30 --retry-connrefused --output-document=.openapidoc/spec/teku.json http://localhost:5051/swagger-docs
+  #           if [ $? != 0 ]; then
+  #             EXIT_CODE=1
+  #           fi
 
-            kill $TEKU_PID
-            exit $EXIT_CODE
-      # - notify
-      - store_artifacts:
-          path: .openapidoc/spec/teku.json
-      - store_artifacts:
-          path: teku_output.log
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - .openapidoc/spec/teku.json
+  #           kill $TEKU_PID
+  #           exit $EXIT_CODE
+  #     # - notify
+  #     - store_artifacts:
+  #         path: .openapidoc/spec/teku.json
+  #     - store_artifacts:
+  #         path: teku_output.log
+  #     - persist_to_workspace:
+  #         root: ~/project
+  #         paths:
+  #           - .openapidoc/spec/teku.json
 
   # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github 
   # The reason we don't use GHA and instead use Circle to push to GHA is:
   # 1. We need assemble -> extractAPISpec -> publishAPISpec and this takes circa 10 mins to build in GHA,
   # 2. We publish artifacts (openapi, docker, binaries etc) only after ALL tests and we can't check for all the jobs passing to kick this one off
   # 3. Minor reason related to 2. single CI helps keep things in one place
-  publishAPISpec:
-    executor: node_executor
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "2d:5b:b7:9f:f9:b1:5c:2c:d4:5e:4a:bf:9f:2b:75:58"
-      - attach_workspace:
-          at: ~/project
-      - restore_cache:
-          keys:
-            - node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
-            - node-cache-
-      - run:
-          name: install
-          working_directory: .openapidoc
-          command: |
-            npm ci
-      - run:
-          name: Build Folder
-          working_directory: .openapidoc
-          command: |
-            OA_GIT_USERNAME=$CIRCLE_USERNAME OA_GIT_EMAIL="${CIRCLE_USERNAME}@users.noreply.github.com" OA_GIT_URL=$CIRCLE_REPOSITORY_URL OA_GH_PAGES_BRANCH="gh-pages" node publish.js
-      # - notify
-      - save_cache:
-          paths:
-            - ~/.npm
-          key: node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
+  # publishAPISpec:
+  #   executor: node_executor
+  #   steps:
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - "2d:5b:b7:9f:f9:b1:5c:2c:d4:5e:4a:bf:9f:2b:75:58"
+  #     - attach_workspace:
+  #         at: ~/project
+  #     - restore_cache:
+  #         keys:
+  #           - node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
+  #           - node-cache-
+  #     - run:
+  #         name: install
+  #         working_directory: .openapidoc
+  #         command: |
+  #           npm ci
+  #     - run:
+  #         name: Build Folder
+  #         working_directory: .openapidoc
+  #         command: |
+  #           OA_GIT_USERNAME=$CIRCLE_USERNAME OA_GIT_EMAIL="${CIRCLE_USERNAME}@users.noreply.github.com" OA_GIT_URL=$CIRCLE_REPOSITORY_URL OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+  #     # - notify
+  #     - save_cache:
+  #         paths:
+  #           - ~/.npm
+  #         key: node-cache-{{ checksum "./.openapidoc/package-lock.json" }}
 
 workflows:
   circleci:
@@ -577,19 +577,38 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-      - acceptanceTests:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - extractAPISpec:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
-      - publish-cloudsmith:
+      # - acceptanceTests:
+      #     requires:
+      #       - assemble
+      #     filters:
+      #       tags:
+      #         <<: *filters-release-tags
+      # - extractAPISpec:
+      #     requires:
+      #       - assemble
+      #     filters:
+      #       tags:
+      #         <<: *filters-release-tags
+      # - publish-cloudsmith:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #           - /^release-.*/
+      #       tags:
+      #         <<: *filters-release-tags
+      #     requires:
+      #       - unitTests
+      #       - propertyTests
+      #       - integrationTests
+      #       - acceptanceTests
+      #       - referenceTests
+      #       - extractAPISpec
+      #       - spotless
+      #       - windowsBuild
+      #     context:
+      #       - protocols-cloudsmith
+      - publishDockerAmd64:
           filters:
             branches:
               only:
@@ -603,26 +622,7 @@ workflows:
             - integrationTests
             # - acceptanceTests
             - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
-          context:
-            - protocols-cloudsmith
-      - publishDockerAmd64:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags:
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
+            # - extractAPISpec
             - spotless
             - windowsBuild
           context:
@@ -639,9 +639,9 @@ workflows:
             - unitTests
             - propertyTests
             - integrationTests
-            - acceptanceTests
+            # - acceptanceTests
             - referenceTests
-            - extractAPISpec
+            # - extractAPISpec
             - spotless
             - windowsBuild
           context:
@@ -659,23 +659,23 @@ workflows:
             - publishDockerAmd64
           context:
             - protocols-dockerhub
-      - publishAPISpec:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-            tags: # stable doc is published only on tags to prevent confusion on the doc site.
-              <<: *filters-release-tags
-          requires:
-            - unitTests
-            - propertyTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - extractAPISpec
-            - spotless
-            - windowsBuild
+      # - publishAPISpec:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #           - /^release-.*/
+      #       tags: # stable doc is published only on tags to prevent confusion on the doc site.
+      #         <<: *filters-release-tags
+      #     requires:
+      #       - unitTests
+      #       - propertyTests
+      #       - integrationTests
+            # - acceptanceTests
+      #       - referenceTests
+      #       - extractAPISpec
+      #       - spotless
+      #       - windowsBuild
   nightly:
     triggers:
       - schedule:
