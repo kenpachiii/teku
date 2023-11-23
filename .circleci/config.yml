@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@3.4.2
+  # slack: circleci/slack@3.4.2
   win: circleci/windows@5.0.0
 executors:
   small_executor:
@@ -150,13 +150,13 @@ commands:
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" uploadDocker
 
-  notify:
-    description: "Notify Slack"
-    steps:
-      - slack/status:
-          mentions: "team-centaur"
-          fail_only: true
-          only_for_branches: 'master'
+  # notify:
+  #   description: "Notify Slack"
+  #   steps:
+  #     - slack/status:
+  #         mentions: "team-centaur"
+  #         fail_only: true
+  #         only_for_branches: 'master'
 jobs:
   assemble:
     executor: large_executor
@@ -171,7 +171,7 @@ jobs:
           command: |
             mkdir /tmp/teku-distributions
             cp build/distributions/*.tar.gz /tmp/teku-distributions/
-      - notify
+      # - notify
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -223,7 +223,7 @@ jobs:
           name: Spotless
           command: |
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
-      - notify
+      # - notify
 
   dockerScan:
     executor: trivy_executor
@@ -245,7 +245,7 @@ jobs:
               docker pull -q "consensys/teku:develop-$FILE"
               trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL --ignorefile "gradle/trivyignore.txt" --timeout 10m "consensys/teku:develop-$FILE" 
             done
-      - notify
+      # - notify
 
   unitTests:
     parallelism: 2
@@ -274,7 +274,7 @@ jobs:
             export JAVA_TOOL_OPTIONS="-Xmx2500m"
             export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
             ./gradlew --no-daemon --parallel test $GRADLE_ARGS
-      - notify
+      # - notify
       - capture_test_results
 
   propertyTests:
@@ -302,7 +302,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel --info propertyTest $GRADLE_ARGS
-      - notify
+      # - notify
       - capture_test_results
 
   integrationTests:
@@ -316,7 +316,7 @@ jobs:
           no_output_timeout: 20m
           command: |
             ./gradlew --no-daemon --parallel integrationTest
-      - notify
+      # - notify
       - capture_test_results
       - store_artifacts:
           path: build/test-results
@@ -346,7 +346,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
-      - notify
+      # - notify
       - capture_test_results
       - capture_test_artifacts
       - store_artifacts:
@@ -374,7 +374,7 @@ jobs:
           name: CompileReferenceTests
           command: |
             ./gradlew --no-daemon --parallel compileReferenceTestJava
-      - notify
+      # - notify
       - save_cache:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
@@ -410,7 +410,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
-      - notify
+      # - notify
       - capture_test_results
 
   publish-cloudsmith:
@@ -428,7 +428,7 @@ jobs:
           name: Publish to Cloudsmith
           command: |
             ./gradlew --no-daemon --parallel cloudsmithUpload publish
-      - notify
+      # - notify
 
   publishDockerAmd64:
     executor: machine_executor_amd64
@@ -438,7 +438,7 @@ jobs:
           at: ~/project
       - docker_trust_sign
       - docker_publish_images
-      - notify
+      # - notify
 
   publishDockerArm64:
     executor: machine_executor_arm64
@@ -448,7 +448,7 @@ jobs:
           at: ~/project
       - docker_trust_sign
       - docker_publish_images
-      - notify
+      # - notify
 
   manifestDocker:
     executor: medium_executor
@@ -459,7 +459,7 @@ jobs:
           name: Create and publish docker manifest
           command: |
             ./gradlew --no-daemon --parallel manifestDocker
-      - notify
+      # - notify
 
   extractAPISpec:
     executor: medium_executor
@@ -487,7 +487,7 @@ jobs:
 
             kill $TEKU_PID
             exit $EXIT_CODE
-      - notify
+      # - notify
       - store_artifacts:
           path: .openapidoc/spec/teku.json
       - store_artifacts:
@@ -525,7 +525,7 @@ jobs:
           working_directory: .openapidoc
           command: |
             OA_GIT_USERNAME=$CIRCLE_USERNAME OA_GIT_EMAIL="${CIRCLE_USERNAME}@users.noreply.github.com" OA_GIT_URL=$CIRCLE_REPOSITORY_URL OA_GH_PAGES_BRANCH="gh-pages" node publish.js
-      - notify
+      # - notify
       - save_cache:
           paths:
             - ~/.npm
