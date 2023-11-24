@@ -495,7 +495,7 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-def dockerImage = "consensys/teku"
+def dockerImage = "kenpachiii/teku"
 def dockerJdkVariants = [ "jdk17" ]
 def dockerBuildDir = "build/docker-teku/"
 
